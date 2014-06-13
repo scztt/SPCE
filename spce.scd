@@ -1,6 +1,7 @@
 (
 SynthDef(\BFormatReverb, {
-	arg in_bus, mix, predelay, cutoff, t60low, t60high, diffusion, diffusionLR, diffusionFB, mod, out_bus, gate = 1, insert;
+	arg in_bus, mix, predelay, cutoff, t60low, t60high, diffusion, diffusionLR, diffusionFB, mod, out_bus, gate = 1, insert,
+	fAmpMin=(-80), fAmpMax=(-35);
 	var local, in, sum, delays, delayMod, allpassDelays, lateAllpassDelays;
 	var allpassCoefEarly, allpassCoefLate;
 	var g0late, g1late, a1late, b0late;
@@ -73,23 +74,34 @@ SynthDef(\BFormatReverb, {
 								earlyVec[2], 0.0, 0.0, 0.0,
 								earlyVec[3], 0.0, 0.0, 0.0];
 	local = local.collect({
-		|sig|
-		var base, amp, adjust, phase;
+		|sig, i|
+		var base, amp, adjust, width, db, phase, nell;
 		base = \base.kr(200);
-		amp = Amplitude.kr(BPF.ar(sig, base, 13 / base)) - 0.0001;
-		amp = max(amp, 0);
+		amp = Amplitude.kr(BPF.ar(sig, base, 10 / base)).ampdb;
+		//Out.kr(i + 10, amp.ampdb);
+		// amp = amp - 0.0001;
+		// amp = max(amp, 0);
 		amp = Latch.ar(amp, Dust.ar(5));
-		adjust = (2.3 - (amp * 1000)).lagud(4, 0.001).max(-90);
+		adjust = amp.linlin(fAmpMin, fAmpMax, 0, 2);
+		adjust = adjust.lagud(8, 1);
+		//adjust = (2.3 - (amp * 1000)).lagud(4, 0.001).max(-90);
 		phase = { 1.0.rand + Latch.kr(LFNoise2.kr(1), Dust.kr(5)) };
+		width = 6 + adjust.linexp(0, 2, 1, 150);
+		db = adjust.lincurve(0, 2, 12, -40, 5);
+		Out.kr(10 + i, db);
+
 		\notes.kr([1, 4/3, 5/3, 7/3]).do({
 			|f|
+			f = ((f * base) + SinOsc.ar(0.1, 0.0 + phase, 5));
 			sig = MidEQ.ar(
 				sig,
-				((f * base) + SinOsc.ar(0.1, 0.1 + phase, 5)),
-				(13 - adjust) / base,
-				adjust
+				f,
+				width / f,
+				db
 			);
+			sig = XFade2.ar(sig, sig * SinOsc.ar(f / 2), -0.7)
 		});
+		TraceBadValues(sig);
 		sig;
 	});
 
@@ -115,7 +127,6 @@ SynthDef(\BFormatReverb, {
 			});
 	globenv = EnvGen.kr(
 					Env([0, 1, 0], [3, 4], \sin, 1), gate, doneAction: 2);
-	TraceBadValues(outVec);
 	Out.ar(out_bus, (In.ar(in_bus, 4)*(1.0-mix)) + (outVec*mix) * globenv);
 	local = LeakDC.ar(local);
 	forBy(0, 14, 2, {arg i;
@@ -176,7 +187,7 @@ n = {
 		[	freqA, 	freqA, 	freqA, 	freqB, 	freqB, 	TRand.kr(5, 22, sig)],
 		[	0.0001, durN, 	0.01, 	1-durN, 0.01 	]
 	), gate: trig, timeScale:dur);
-	envDelay = envDelay * (2.pow(LFDNoise3.ar(LFDNoise3.ar(1, octChaos, octSpeed)).range(octLow, octHigh).round().poll));
+	envDelay = envDelay * (2.pow(LFDNoise3.ar(LFDNoise3.ar(1, octChaos, octSpeed)).range(octLow, octHigh).round()));
 	sig = LPF.ar(sig, lowpass);
 	sig = XFade2.ar(
 		sig,
@@ -219,7 +230,7 @@ r = Synth(\BFormatReverb, args: [
 {
 	inf.do({
 		r.set(\base, [100, 200, 300, 400, 500, 600].choose.postln);
-		45.wait;
+		15.wait;
 	})
 }.fork;
 
@@ -229,21 +240,34 @@ r = Synth(\BFormatReverb, args: [
 			[1, 5/3, 7/3, 9/3 ],
 			[1, 9/4, 7/4, 18/4 ]
 		].choose.postln);
-		35.wait;
+		25.wait;
 	})
 }.fork;
 
 n.set(\lowpass, 1565);
 n.set(\hardMix, 1);
 n.set(\combOct, -3);
-n.set(\octLow, 5);
-n.set(\octHigh, 5);
+n.set(\octLow, 4);
+n.set(\octHigh, 4);
 n.set(\klankDecay, 3.9);
 
-n.set(\octSpeed, 6);
+n.set(\octSpeed, 2);
 n.set(\octChaos, 6);
-n.set(\impDur, 16);
+n.set(\impDur, 0.5);
+n.set(\impDurChaos, 2);
 n.set(\impDurChaos, 2);
 
+r.set(\fAmpMin, -80);
+r.set(\fAmbpMax, -65);
+
+Bus(\control, 10, 16).debugScope
 );
 
+LevelIndicator
+
+Font.setDefault(Font("M+ 1c", 12, true));
+Font.defaultSansFace = Font("M+ 1c", 12, true);
+)
+
+
+Quarks.gui
