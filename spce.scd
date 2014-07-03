@@ -101,7 +101,7 @@ SynthDef(\BFormatReverb, {
 			);
 			sig = XFade2.ar(sig, sig * SinOsc.ar(f / 2), -0.7)
 		});
-		TraceBadValues(sig);
+//		TraceBadValues(sig);
 		sig;
 	});
 
@@ -157,6 +157,69 @@ SynthDef(\BFormatReverb, {
 )
 
 (
+SynthDef(\ctrBuzz, {
+	arg hardMix = 0.4, dur=10, durN=0.5, microDur=0.5, impDur=3.1, freqA=100, freqB=210, klankDecay=1, envFix=0,
+	octLow = -3, octHigh = 3, combOct=0, octSpeed=3, octChaos=1, lowpass=400;
+
+	var sig, trig, env, envDecay, envDelay;
+
+	sig = Impulse.ar(impDur) * 0.8;
+	// dur = TRand.ar(
+	// 	0.8,
+	// 	1.25,
+	// 	sig
+	// );
+	//durN = TRand.ar(0.2, 0.8, sig).pow(TRand.ar(1, 3, sig));
+
+	// freqA = freq;
+	// freqB = (freqA + (TRand.ar(-1, 0, sig).round() * 5));
+	// freqA = freqA.midicps; freqB = freqB.midicps;
+	trig = Trig1.ar(sig, 0.1);
+	env = EnvGen.ar(Env.perc(1), gate: trig, timeScale:microDur);
+	envDecay = EnvGen.ar(Env([1, 0.4, 1, envFix * 0.0001], [0.2, 0.7, 0.1]), gate: trig, timeScale:microDur);
+	envDelay = EnvGen.ar(Env(
+		[	freqA, 	freqA, 	freqA, 	freqB, 	freqB, 	TRand.kr(5, 22, sig)],
+		[	0.0001, durN, 	0.01, 	1-durN, 0.01 	]
+	), gate:trig, timeScale:microDur);
+	envDelay = envDelay * (2.pow(LFDNoise3.ar(LFDNoise3.ar(1, octChaos, octSpeed)).range(octLow, octHigh).round()));
+	sig = LPF.ar(sig, lowpass);
+	sig = XFade2.ar(
+		sig,
+		CombC.ar(sig, 0.5, (envDelay * 2.pow(combOct)).reciprocal, envDecay * -10),
+		hardMix * 2 - 1
+	);
+	sig = DynKlank.ar(
+		`[[1, 2, 3, 4, 5], [1, 1, 1, 1, 1], [1, 0.5, 0.4, 0.2, 0.1]],
+		sig,
+		freqscale:envDelay,
+		decayscale:envDecay * klankDecay
+	);
+	sig = sig + PitchShift.ar(sig, pitchRatio:2, mul: 0.25 * LFPulse.kr(1, 0, 0.5));
+	sig = LeakDC.ar(sig);
+	sig = Compander.ar(sig, sig, 0.7, 1, 1/2);
+	sig = Mirror.ar(sig, -1, 1);
+	sig = MoogFF.ar(sig, 15 + (env * 3000), 3.0);
+	sig = sig * EnvGen.kr(Env([0, 1, 1, 0], [0.15, 0.7, 0.15]), timeScale: dur, doneAction:2);
+	Out.ar(10,
+		PanB.ar(sig, LFSaw.kr(0.1, 0, 2, -1))
+	);
+}).add;
+
+(
+Synth(\ctrBuzz, args:[
+	\hardMix, 0.0,
+	\impDur, 16,
+	\dur, 40,
+	\freqA, 64.midicps,
+	\freqB, 44.midicps,
+	\durN, 0.1,
+	\octLow:-1,
+	\octHigh:0
+], target:r, addAction:'addBefore')
+)
+
+
+
 n = {
 	arg hardMix = 0.4, impDur=3.1, impDurChaos=3, klankDecay=1, envFix=0,
 	octLow = -3, octHigh = 3, combOct=0, octSpeed=3, octChaos=1, lowpass=400;
