@@ -156,24 +156,23 @@ SynthDef(\BFormatReverb, {
 }).add;
 )
 
+
 (
 SynthDef(\ctrBuzz, {
-	arg hardMix = 0.4, dur=10, durN=0.5, microDur=0.5, impDur=3.1, freqA=100, freqB=210, klankDecay=1, envFix=0,
-	octLow = -3, octHigh = 3, combOct=0, octSpeed=3, octChaos=1, lowpass=400;
+	arg hardMix=0.4, hardMixMod=0, dur=10, sustain=10, durN=0.5, durNMod=0, microDur=0.5, microDurMod=0, impDur=3.1, impDurMod=0, freqA=100, freqB=210, klankDecay=1, envFix=0,
+	octLow = -3, octHigh = 3, combOct=0, octSpeed=3, octSpeedMod=0, octChaos=1, lowpass=400, lowpassMod=0;
 
-	var sig, trig, env, envDecay, envDelay;
+	var sig, trig, env, envDecay, envDelay, envDelayMod;
+	dur = sustain;
+	hardMix = (hardMix + hardMixMod).linlin(0, 1, 0, 1);
+	durN = (durN + durNMod).linlin(0, 1, 0, 1);
+	microDur = (microDur * 2.pow(microDurMod));
+	impDur = (impDur * 2.pow(impDurMod));
+	octSpeed = (octSpeed * 2.pow(octSpeedMod));
+	lowpass = (lowpass + lowpassMod);
 
 	sig = Impulse.ar(impDur) * 0.8;
-	// dur = TRand.ar(
-	// 	0.8,
-	// 	1.25,
-	// 	sig
-	// );
-	//durN = TRand.ar(0.2, 0.8, sig).pow(TRand.ar(1, 3, sig));
 
-	// freqA = freq;
-	// freqB = (freqA + (TRand.ar(-1, 0, sig).round() * 5));
-	// freqA = freqA.midicps; freqB = freqB.midicps;
 	trig = Trig1.ar(sig, 0.1);
 	env = EnvGen.ar(Env.perc(1), gate: trig, timeScale:microDur);
 	envDecay = EnvGen.ar(Env([1, 0.4, 1, envFix * 0.0001], [0.2, 0.7, 0.1]), gate: trig, timeScale:microDur);
@@ -181,11 +180,18 @@ SynthDef(\ctrBuzz, {
 		[	freqA, 	freqA, 	freqA, 	freqB, 	freqB, 	TRand.kr(5, 22, sig)],
 		[	0.0001, durN, 	0.01, 	1-durN, 0.01 	]
 	), gate:trig, timeScale:microDur);
-	envDelay = envDelay * (2.pow(LFDNoise3.ar(LFDNoise3.ar(1, octChaos, octSpeed)).range(octLow, octHigh).round()));
+	//envDelayMod = 2.pow(LFDNoise3.ar(LFDNoise3.ar(1, octChaos, octSpeed)).range(octLow, octHigh).round());
+	envDelayMod = LFDNoise3.ar(1, octChaos, octSpeed).abs; Out.kr(100, envDelayMod);
+	envDelayMod = LFDNoise3.ar(envDelayMod).wrap(-1, 1);  Out.kr(101, envDelayMod);
+	envDelayMod = envDelayMod.range(octLow, octHigh);  Out.kr(102, envDelayMod);
+	envDelayMod = envDelayMod.round();  Out.kr(103, envDelayMod);
+	envDelayMod = 2.pow(envDelayMod);  Out.kr(104, envDelayMod);
+
+	envDelay = envDelay * envDelayMod;
 	sig = LPF.ar(sig, lowpass);
 	sig = XFade2.ar(
 		sig,
-		CombC.ar(sig, 0.5, (envDelay * 2.pow(combOct)).reciprocal, envDecay * -10),
+		CombC.ar(sig, 8, (envDelay * 2.pow(combOct)).reciprocal, envDecay * -10),
 		hardMix * 2 - 1
 	);
 	sig = DynKlank.ar(
@@ -196,15 +202,18 @@ SynthDef(\ctrBuzz, {
 	);
 	sig = sig + PitchShift.ar(sig, pitchRatio:2, mul: 0.25 * LFPulse.kr(1, 0, 0.5));
 	sig = LeakDC.ar(sig);
-	sig = Compander.ar(sig, sig, 0.7, 1, 1/2);
 	sig = Mirror.ar(sig, -1, 1);
-	sig = MoogFF.ar(sig, 15 + (env * 3000), 3.0);
+	sig = Compander.ar(sig, sig, 0.7, 1, 1/2);
+	sig = MoogFF.ar(sig, 35 + (env * min(15000, lowpass * 10)), 3.0);
 	sig = sig * EnvGen.kr(Env([0, 1, 1, 0], [0.15, 0.7, 0.15]), timeScale: dur, doneAction:2);
+
 	Out.ar(10,
-		PanB.ar(sig, LFSaw.kr(0.1, 0, 2, -1))
+		PanB.ar(sig, LFSaw.kr(Rand(-0.1, 0.1), Rand(-2, 2), 2, -1))
 	);
 }).add;
+)
 
+8.9 * 2.pow(242)
 (
 Synth(\ctrBuzz, args:[
 	\hardMix, 0.0,
@@ -268,10 +277,14 @@ n = {
 	sig = Compander.ar(sig, sig, 0.7, 1, 1/2);
 	sig = Mirror.ar(sig, -1, 1);
 	sig = MoogFF.ar(sig, 5 + (env * 3000), 3.0);
+
 	Out.ar(10,
 		PanB.ar(sig, LFSaw.kr(0.1, 0, 2, -1))
 	);
 }.play;
+
+
+
 r = Synth(\BFormatReverb, args: [
 	\in_bus, 10,
 	\mix, 0.65,
