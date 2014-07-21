@@ -154,10 +154,7 @@ SynthDef(\BFormatReverb, {
 	});
 	LocalOut.ar(local);
 }).add;
-)
 
-
-(
 SynthDef(\ctrBuzz, {
 	arg hardMix=0.4, hardMixMod=0, dur=10, sustain=10, durN=0.5, durNMod=0, microDur=0.5, microDurMod=0, impDur=3.1, impDurMod=0, freqA=100, freqB=210, klankDecay=1, envFix=0,
 	octLow = -3, octHigh = 3, combOct=0, octSpeed=3, octSpeedMod=0, octChaos=1, lowpass=400, lowpassMod=0;
@@ -213,137 +210,24 @@ SynthDef(\ctrBuzz, {
 }).add;
 )
 
-8.9 * 2.pow(242)
-(
-Synth(\ctrBuzz, args:[
-	\hardMix, 0.0,
-	\impDur, 16,
-	\dur, 40,
-	\freqA, 64.midicps,
-	\freqB, 44.midicps,
-	\durN, 0.1,
-	\octLow:-1,
-	\octHigh:0
-], target:r, addAction:'addBefore')
-)
 
-
-
-n = {
-	arg hardMix = 0.4, impDur=3.1, impDurChaos=3, klankDecay=1, envFix=0,
-	octLow = -3, octHigh = 3, combOct=0, octSpeed=3, octChaos=1, lowpass=400;
-
-	var sig, trig, env, envDecay, envDelay, dur, freqA, freqB, durN;
-
-	impDur = LFNoise2.kr(0.8, impDurChaos, impDur).round() * 0.7;
-	sig = Impulse.ar(impDur) * 0.8;
-
-	dur = TRand.ar(
-		0.8,
-		1.25,
-		sig
-	);
-	durN = TRand.ar(0.2, 0.8, sig).pow(TRand.ar(1, 3, sig));
-
-	freqA = (TRand.ar(0, 2, sig) * 4 + 65).round();
-	freqB = (freqA + (TRand.ar(-1, 0, sig).round() * 5));
-
-	// freqA = (TRand.ar(0, 1, sig) + 95).round();
-	// freqB = (freqA + (TRand.ar(-4, 0, sig).round() * 3));
-
-	freqA = freqA.midicps; freqB = freqB.midicps;
-	trig = Trig1.ar(sig, 0.1);
-	env = EnvGen.ar(Env.perc(1), gate: trig, timeScale:dur);
-	envDecay = EnvGen.ar(Env([1, 0.4, 1, envFix * 0.0001], [0.2, 0.7, 0.1]), gate: trig, timeScale:dur);
-	envDelay = EnvGen.ar(Env(
-		[	freqA, 	freqA, 	freqA, 	freqB, 	freqB, 	TRand.kr(5, 22, sig)],
-		[	0.0001, durN, 	0.01, 	1-durN, 0.01 	]
-	), gate: trig, timeScale:dur);
-	envDelay = envDelay * (2.pow(LFDNoise3.ar(LFDNoise3.ar(1, octChaos, octSpeed)).range(octLow, octHigh).round()));
-	sig = LPF.ar(sig, lowpass);
-	sig = XFade2.ar(
-		sig,
-		CombC.ar(sig, 0.5, (envDelay * 2.pow(combOct)).reciprocal, envDecay * -10),
-		hardMix * 2 - 1
-	);
-	sig = DynKlank.ar(
-		`[[1, 2, 3, 4, 5], [1, 1, 1, 1, 1], [1, 0.5, 0.4, 0.2, 0.1]],
-		sig,
-		freqscale:envDelay,
-		decayscale:envDecay * klankDecay
-	);
-	sig = sig + PitchShift.ar(sig, pitchRatio:2, mul: 0.25 * LFPulse.kr(1, 0, 0.5));
-	sig = LeakDC.ar(sig);
-	sig = Compander.ar(sig, sig, 0.7, 1, 1/2);
-	sig = Mirror.ar(sig, -1, 1);
-	sig = MoogFF.ar(sig, 5 + (env * 3000), 3.0);
-
-	Out.ar(10,
-		PanB.ar(sig, LFSaw.kr(0.1, 0, 2, -1))
-	);
-}.play;
-
-
-
-r = Synth(\BFormatReverb, args: [
-	\in_bus, 10,
-	\mix, 0.65,
-	\predelay, 0.15,
-	\cutoff, 100,
-	\t60low, 15.5,
-	\t60high, 2.5,
-//	\diffusion, 1.1,
-	\diffusionLR, 1,
-	\diffusionFB, 1,
-	\out_bus, 5,
-]);
-
-
-{
-	B2UHJ.ar(*InFeedback.ar(5, 3))
-}.play;
-
-{
-	inf.do({
-		r.set(\base, [100, 200, 300, 400, 500, 600].choose.postln);
-		15.wait;
-	})
-}.fork;
-
-{
-	inf.do({
-		r.set(\notes, [
-			[1, 5/3, 7/3, 9/3 ],
-			[1, 9/4, 7/4, 18/4 ]
-		].choose.postln);
-		25.wait;
-	})
-}.fork;
-
-n.set(\lowpass, 1565);
-n.set(\hardMix, 1);
-n.set(\combOct, -3);
-n.set(\octLow, 4);
-n.set(\octHigh, 4);
-n.set(\klankDecay, 3.9);
-
-n.set(\octSpeed, 2);
-n.set(\octChaos, 6);
-n.set(\impDur, 0.5);
-n.set(\impDurChaos, 2);
-n.set(\impDurChaos, 2);
-
-r.set(\fAmpMin, -80);
-r.set(\fAmbpMax, -65);
-
-Bus(\control, 10, 16).debugScope
-);
-
-LevelIndicator
-
-Font.setDefault(Font("M+ 1c", 12, true));
-Font.defaultSansFace = Font("M+ 1c", 12, true);
-)
-
-
-Quarks.gui
+//
+//
+//
+// n.set(\lowpass, 1565);
+// n.set(\hardMix, 1);
+// n.set(\combOct, -3);
+// n.set(\octLow, 4);
+// n.set(\octHigh, 4);
+// n.set(\klankDecay, 3.9);
+//
+// n.set(\octSpeed, 2);
+// n.set(\octChaos, 6);
+// n.set(\impDur, 0.5);
+// n.set(\impDurChaos, 2);
+// n.set(\impDurChaos, 2);
+//
+// r.set(\fAmpMin, -80);
+// r.set(\fAmbpMax, -65);
+//
+// Bus(\control, 10, 16).debugScope
