@@ -32,7 +32,6 @@ State(\spce).initActions.put({
 
 	~resources.addAll([
 		~lc = LCDevice(),
-		~lc.knobs.do(_.ringStyle_(\fill));
 		~bfBus = Bus.audio(s, 4);
 		~qn = QuNeo(),
 	]);
@@ -49,6 +48,7 @@ State(\spce).initActions.put({
 		\diffusionFB, 1,
 		\out_bus, 5,
 	]);
+	~lc.knobs.do(_.ringStyle_(\fill));
 	~qn.pads[14].default().noteOnActions.clear.add({
 		|pad, cv|
 		~synthGroup.set(\t_impReset, 1);
@@ -77,6 +77,7 @@ State(\spce).initActions.put({
 		var name, bus = Bus.control(s, 1);
 		name = currentEnvironment.findKeyForValue(cv);
 		[cv].connectToBus(s, bus.index);
+		~resources.add(bus);
 		name -> bus;
 	}, Event);
 
@@ -185,6 +186,21 @@ State(\spce).startActions.put({
 });
 ~p = IdentityDictionary.newFrom(~pats);
 
+State(\spce).startActions.add({
+	~lc.connect();
+	~qn.connect();
+	~reverb = Synth(\BFormatReverb, args: [
+		\in_bus, 10,
+		\mix, 0.65,
+		\predelay, 0.15,
+		\cutoff, 100,
+		\t60low, 15.5,
+		\t60high, 2.5,
+		//	\diffusion, 1.1,
+		\diffusionLR, 1,
+		\diffusionFB, 1,
+		\out_bus, 5,
+	]);
 
 CVGrid(\ctrBuzz,
 	*(~mods ++ ~pats)
