@@ -1,30 +1,28 @@
-(
+// (
+// // Basis of good improv session
+// Synth(\ctrBuzz, args:[
+// 	\hardMix, 0.8,
+// 	//	\impDur, 72,
+// 	//	\impDur, 82.5,
+// 	\impDur, 50,
+// 	\dur, 40,
+// 	\microDur, 1.1,
+// 	\freqA, 49.9 ,
+// 	\freqB, 50 - 0.6,
+// 	\durN, 0.5,
+// 	\octLow: -10,
+// 	\octHigh: -8,
+// 	\octSpeed: 0.6,
+// 	\octChaos: 2,
+// 	\klankDecay, 50,
+// 	\combOct: 3.1,
+// 	\envFix: 0
+// ], target:r, addAction:'addBefore')
+// )
 
-// Basis of good improv session
-Synth(\ctrBuzz, args:[
-	\hardMix, 0.8,
-//	\impDur, 72,
-//	\impDur, 82.5,
-	\impDur, 50,
-	\dur, 40,
-	\microDur, 1.1,
-	\freqA, 49.9 ,
-	\freqB, 50 - 0.6,
-	\durN, 0.5,
-	\octLow: -10,
-	\octHigh: -8,
-	\octSpeed: 0.6,
-	\octChaos: 2,
-	\klankDecay, 50,
-	\combOct: 3.1,
-	\envFix: 0
-], target:r, addAction:'addBefore')
-)
-
-MIDIClient.init
-
-State(\spce).clear()
-State(\spce).initActions.put({
+State(\spce).push();
+State(\spce).clear();
+State(\spce).initActions.add({
 	Require("spce");
 
 	~lc.notNil.if({ ~lc.free });
@@ -32,8 +30,9 @@ State(\spce).initActions.put({
 
 	~resources.addAll([
 		~lc = LCDevice(),
-		~bfBus = Bus.audio(s, 4);
 		~qn = QuNeo(),
+		~bfBus = Bus.audio(s, 4),
+		~synthGroup = Group(~reverb, \addBefore),
 	]);
 
 	~reverb = Synth(\BFormatReverb, args: [
@@ -61,6 +60,7 @@ State(\spce).initActions.put({
 		|pad, cv|
 		~synthGroup.set(\otrig, 0);
 	});
+
 
 	// Global to all running synths.
 	~global = [
@@ -153,7 +153,8 @@ State(\spce).initActions.put({
 			\combOct, 		~combOct,
 			\envFix, 1,
 			\lowpassMod, 	~globalBus[\lowpassMod].asMap,
-	));
+		)
+	);
 
 	Pdef(\cbPat1, Pbind(
 		\impDur, Prand([2, 2, 2, 2, 2, 2, 6, 12], inf) * Pkey(\impDur),
@@ -167,17 +168,11 @@ State(\spce).initActions.put({
 	));
 
 	~grid.front;
-	ServerView(s).front;
-	FullscreenPanel(\main).place(ServerView(s).view, 3, 0, 2, 1);
-	FullscreenPanel(\main).place(~grid.view, 0, 2, 2, 2);
-	FullscreenPanel(\main).front;
-})
-
-State(\spce).startActions.put({
-	~panner = { B2UHJ.ar(*InFeedback.ar(5, 3)) }.play;
-	~synthGroup = Group(~reverb, \addBefore);
+	// ServerView(s).front;
+	// FullscreenPanel(\main).place(ServerView(s).view, 3, 0, 2, 1);
+	// FullscreenPanel(\main).place(~grid.view, 0, 2, 2, 2);
+	// FullscreenPanel(\main).front;
 });
-~p = IdentityDictionary.newFrom(~pats);
 
 State(\spce).startActions.add({
 	~lc.connect();
@@ -199,14 +194,17 @@ State(\spce).startActions.add({
 		 Pdef(\cbNotesDrop1) <> Pdef(\ctrBuzzBase)
 	).play;
 
+	~panner = { B2UHJ.ar(*InFeedback.ar(5, 3)) }.play;
+});
+
+ServerView(s).front;
 
 
-Pdef(\ctrBuzz).play;
 
-)
-Bus(\control, 100, 5).debugScope;
+/*
 
-
+State(\spce).doInit();
+State(\spce).doStart();
 
 (
 	\instrument:	 \ctrBuzz,
