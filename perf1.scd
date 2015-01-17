@@ -159,19 +159,12 @@ State(\spce).initActions.put({
 		\impDur, Prand([2, 2, 2, 2, 2, 2, 6, 12], inf) * Pkey(\impDur),
 		\microDur, Pseq([4, 4, 1.5, 0.5], inf) * Pkey(\microDur),
 		\durN, Pseq([0.05, 0.9, 0.05], inf) + Pkey(\durN),
-
 	));
 
 	Pdef(\cbNotesDrop1, Pbind(
-		\freqA, Scale.minor.degreeToFreq(0, 98, 2).postln,
-		\freqB, Scale.minor.degreeToFreq(-2, 98, 2).postln,
+		\freqA, Scale.minor.degreeToFreq(-1, 98, 2).postln,
+		\freqB, Scale.minor.degreeToFreq(4, 98, 2).postln,
 	));
-
-	Pdef(\cbNotesDrop1, Pbind(
-		\freqA, Scale.minor.degreeToFreq(0, 98, 2).postln,
-		\freqB, Scale.minor.degreeToFreq(-4, 98, 2).postln,
-	));
-
 
 	~grid.front;
 	ServerView(s).front;
@@ -206,41 +199,11 @@ CVGrid(\ctrBuzz,
 	*(~mods ++ ~pats)
 ).front;
 
-(
-Pdef(\ctrBuzz,
-	Pbind(
-		\instrument, \ctrBuzz,
-		\hardMix, ~p['hardmix'],
-		\hardMixMod, ~modBus['hardmix +'].asMap,
-		\impDur, Prand([2, 2, 2, 2, 2, 2, 6, 12], inf) * ~p['impulse dur *'], //*
-		\impDurMod, ~modBus['impulse Dur +'].asMap,
-		\dur, Prand([8] * 1, inf),
-		\legato, Pseq([4], inf),
-		\microDur, Pseq([4, 4, 1.5, 0.5], inf)  * ~p['micro dur *'],
-		\microDurMod, ~modBus['microDur +'],
-		\freqA, Scale.chromatic.degreeToFreq(0, 98, 2).postln,
-		\freqB, Scale.chromatic.degreeToFreq(-2, 98, 2).postln,
-		\durN, Pseq([0.05, 0.9, 0.05], inf) + ~p['durN +'], //*
-		\durNMod, ~modBus['durN +'].asMap,
-		\octLow, ~p['octLow'],
-		\octHigh, ~p['octHigh'], //*
-		\octSpeed, ~p['octSpeed'],
-		\octSpeedMod, ~modBus['octave speed +'].asMap,
-		\octChaos, ~p['octChaos'],
-		\klankDecay, ~p['klank decay'], // *
-		\combOct, ~p['compOct'],
-		\envFix, 1,
-		\lowpassMod, ~modBus['lowpass +'].asMap,
+	Pdef(\ctrBuzz,
+		 Pdef(\cbNotesDrop1) <> Pdef(\ctrBuzzBase)
+	).play;
 
-));
-)
 
-Pdef(\ctrBuzz).play
-
-Pdef(\ctrBuzz,
-	Pbind(
-		\instrument, \ctrBuzz,
-));
 
 Pdef(\ctrBuzz).play;
 
@@ -249,26 +212,29 @@ Bus(\control, 100, 5).debugScope;
 
 
 
-// nice
 (
-Synth(\ctrBuzz, args:[
-	\hardMix, 0.1,
-	\impDur, 0.5,
-//	\impDur, 62.5,
-//	\impDur, 50,
-	\dur, 40,
-	\microDur, 1.1,
-	\freqA, 49.9 * 4/3,
-	\freqB, 150 - 0.6 * 2/3,
-	\durN, 0.5,
-	\octLow: 2,
-	\octHigh: 3,
-	\octSpeed: 0.6,
-	\klankDecay, 50,
-	\combOct: -6,
-	\envFix: 0
-], target:r, addAction:'addBefore')
-)
+	\instrument:	 \ctrBuzz,
+	\hardMix: 		~hardMix,
+	\hardMixMod: 	~globalBus[\hardMixMod].asMap,
+	\impDur: 		~impulseDur,
+	\impDurMod: 	~globalBus[\impulseDurMod].asMap,
+	\dur:			8,
+	\legato: 		8,
+	\microDur: 		~microDur,
+	\microDurMod: 	~globalBus[\microDurMod].asMap,
+	\freqA: 		67.midicps,
+	\freqB: 		63.midicps,
+	\durN: 			~durN,
+	\octLow: 		~octLow,
+	\octHigh: 		~octHigh,
+	\octSpeed: 		~octSpeed,
+	\octSpeedMod: 	~globalBus[\octSpeedMod].asMap,
+	\octChaos: 		~octChaos,
+	\klankDecay: 	~klankDecay,
+	\combOct: 		~combOct,
+	\envFix: 		1,
+	\lowpassMod:	~globalBus[\lowpassMod].asMap,
+);
 
-n = s.record("/Users/fsc/Desktop/SC_CLEAN/SPCE/2.wav");
-s.stopRecording()
+
+*/
