@@ -195,10 +195,6 @@ State(\spce).startActions.add({
 		\out_bus, 5,
 	]);
 
-CVGrid(\ctrBuzz,
-	*(~mods ++ ~pats)
-).front;
-
 	Pdef(\ctrBuzz,
 		 Pdef(\cbNotesDrop1) <> Pdef(\ctrBuzzBase)
 	).play;
