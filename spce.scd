@@ -153,7 +153,7 @@ SynthDef(\BFormatReverb, {
 		local[i+8] = (diffusionFBsin*temp[0]) + (diffusionFBcos*temp[1]);
 	});
 	LocalOut.ar(local);
-}).add;
+}).addReplace;
 
 SynthDef(\ctrBuzz, {
 	arg hardMix=0.4, hardMixMod=0, dur=10, sustain=10, durN=0.5, durNMod=0, microDur=0.5, microDurMod=0, impDur=3.1, impDurMod=0, freqA=100, freqB=210, klankDecay=1, envFix=0,
@@ -207,7 +207,7 @@ SynthDef(\ctrBuzz, {
 	Out.ar(10,
 		PanB.ar(sig, LFSaw.kr(Rand(-0.1, 0.1), Rand(-2, 2), 2, -1))
 	);
-}).add;
+}).addReplace;
 )
 
 
