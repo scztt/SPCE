@@ -156,8 +156,8 @@ SynthDef(\BFormatReverb, {
 }).addReplace;
 
 SynthDef(\ctrBuzz, {
-	arg hardMix=0.4, hardMixMod=0, dur=10, sustain=10, durN=0.5, durNMod=0, microDur=0.5, microDurMod=0, impDur=3.1, impDurMod=0, freqA=100, freqB=210, klankDecay=1, envFix=0,
-	octLow = -3, octHigh = 3, combOct=0, octSpeed=3, octSpeedMod=0, octChaos=1, lowpass=400, lowpassMod=0;
+	arg hardMix=0.4, hardMixMod=0, dur=10, sustain=10, durN=0.5, durNMod=0, microDur=0.5, microDurMod=0, impDur=3.1, impDurMod=0, t_impReset = 0, freqA=100, freqB=210, klankDecay=1, envFix=0,
+	octLow = -3, octHigh = 3, combOct=0, octSpeed=3, octSpeedMod=0, octChaos=1, lowpass=400, lowpassMod=0, otrig=0;
 
 	var sig, trig, env, envDecay, envDelay, envDelayMod;
 	dur = sustain;
@@ -168,7 +168,10 @@ SynthDef(\ctrBuzz, {
 	octSpeed = (octSpeed * 2.pow(octSpeedMod));
 	lowpass = (lowpass + lowpassMod);
 
-	sig = Impulse.ar(impDur) * 0.8;
+	//sig = (Impulse.ar(impDur) * 0.8) + K2A.ar(otrig * 0.1);
+	sig = Phasor.ar(t_impReset, impDur / SampleRate.ir(), -0.5, 0.5, -0.0001);
+	sig = Trig1.ar(sig, SampleRate.ir().reciprocal)
+	+ K2A.ar(otrig * 0.1);
 
 	trig = Trig1.ar(sig, 0.1);
 	env = EnvGen.ar(Env.perc(1), gate: trig, timeScale:microDur);
