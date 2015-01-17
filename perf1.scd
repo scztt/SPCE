@@ -53,11 +53,12 @@ State(\spce).initActions.add({
 	// Global to all running synths.
 	~global = [
 		~impulseDurMod = 	CV(ControlSpec(-5, 4, 		default:0)),
+		~durNMod =			CV(ControlSpec(-0.5, 0.5, 	default:0)),
 		~microDurMod = 		CV(ControlSpec(-3, 3, 		default:0)),
 		~hardMixMod = 		CV(ControlSpec(-0.5, 0.5,	default:0)),
 		~octSpeedMod = 		CV(ControlSpec(-3, 3, 		default:0)),
+		~klankDecayMod =	CV(ControlSpec(-100, 100, 	default:0)),
 		~lowpassMod = 		CV(ControlSpec(-380, 1000, 	default:0)),
-		~klankDecayMod =	CV(ControlSpec(-100, 100, 	default:0))
 	];
 
 	~globalBus = ~global.collectAs({
@@ -71,41 +72,53 @@ State(\spce).initActions.add({
 
 	// Polled when creating / setting the Pdef - static for synth lifetime
 	~instance = [
-		~hardmix = 			CV(ControlSpec(0.0, 1.0, 			default:0.0)),
-//		~impulseDur = 	 	CV(ControlSpec(1/20, 200, 'exp', 	default:0)),
-		~impulseDur =		CV(ArrayedSpec([
-			ControlSpec(1/20, 20, 'exp'),
-			ControlSpec(20, 300, 'lin', step:10)
-		], default:0)),
-		~dur = 				CV(ControlSpec(4, 32, 'exp', 		default:8)),
-		~microDur =  		CV(ControlSpec(1/20, 20, 'exp', 	default: 10)),
-		//~freqA =	 		CV(ControlSpec(-12, 12), default:-4),
-		//~freqB = 			CV(ControlSpec(-12, 12), default:-3),
-		~durN = 			CV(ControlSpec(-0.5, 0.5, 			default:0.5)),
-		~octLow = 			CV(ControlSpec(-12, 12, step:1,		default:-4)),
-		~octHigh = 			CV(ControlSpec(-12, 12, step:1,		default:-3)),
+		~impDur = 	 		CV(ControlSpec(1/20, 200, 'exp', 	default:0)),
+		~durN = 			CV(ControlSpec(0, 1, 				default:0.5)),
+		~microDur =  		CV(ControlSpec(1/20, 20, 'exp', 	default:10)),
+		~hardMix = 			CV(ControlSpec(0.0, 1.0, 			default:0.0)),
 		~octSpeed = 		CV(ControlSpec(0.1, 10, 'exp', 		default:1)),
 		~octChaos = 		CV(ControlSpec(0.1, 10, 'exp', 		default:1)),
-		~klankDecay = 		CV(ControlSpec(1, 400, 'exp', 		default:4)),
+		// ~impulseDur =	CV(ArrayedSpec([
+		// 	ControlSpec(1/20, 20, 'exp'),
+		// 	ControlSpec(20, 300, 'lin', step:10)
+		// ], default:0)),
+		//  ~dur = 			CV(ControlSpec(4, 32, 'exp', 		default:8)),
+		// ~freqA =	 		CV(ControlSpec(-12, 12), default:-4),
+		// ~freqB = 		CV(ControlSpec(-12, 12), default:-3),
+		~octLow = 			CV(ControlSpec(-12, 12, step:1,		default:-4)),
+		~octHigh = 			CV(ControlSpec(-12, 12, step:1,		default:-3)),
 		~combOct =	 		CV(ControlSpec(-8, 8, step:1, 		default:-4)),
+		~klankDecay = 		CV(ControlSpec(1, 400, 'exp', 		default:4)),
 	];
 
 	// Connect to Livid
 	if (LCDevice.initialized) {
 		~global.do({
 			|cv, i|
-			var name = currentEnvironment.findKeyForValue(cv);
-			l.knobRows.flatten[i].cv_(cv).connect();
+			var knob, name = currentEnvironment.findKeyForValue(cv).asSymbol;
+			knob = ~lc.knobRows.flatten[i];
+			knob.cv_(cv);
+			knob.button.default().buttonOnActions.add({
+				~synthGroup.set(name, knob.cv.value);
+			});
 		});
-		~instance[0..4].do({
+		~instance[0..5].do({
 			|cv, i|
-			var name = currentEnvironment.findKeyForValue(cv);
-			l.knobRows.flatten[16 + i].cv_(cv).connect();
+			var knob, name = currentEnvironment.findKeyForValue(cv);
+			knob = ~lc.knobRows.flatten[16 + i];
+			knob.cv_(cv);
+			knob.button.default().buttonOnActions.add({
+				~synthGroup.set(name, knob.cv.value);
+			});
 		});
-		~instance[5..].do({
+		~instance[6..].do({
 			|cv, i|
-			var name = currentEnvironment.findKeyForValue(cv);
-			l.knobRows.flatten[24 + i].cv_(cv).connect();
+			var knob, name = currentEnvironment.findKeyForValue(cv);
+			knob = ~lc.knobRows.flatten[24 + i];
+			knob.cv_(cv);
+			knob.button.default().buttonOnActions.add({
+				~synthGroup.set(name, knob.cv.value);
+			});
 		});
 	};
 
@@ -120,18 +133,20 @@ State(\spce).initActions.add({
 
 	Pdef(\ctrBuzzBase,
 		Pbind(
-			\instrument, \ctrBuzz,
+			\instrument, 	\ctrBuzz,
+			\group,			~synthGroup,
 			\hardMix, 		~hardMix,
 			\hardMixMod, 	~globalBus[\hardMixMod].asMap,
-			\impDur, 		~impulseDur,
+			\impDur, 		~impDur,
 			\impDurMod, 	~globalBus[\impulseDurMod].asMap,
-			\dur, 8,
-			\legato, 4,
+			\dur, 			4,
+			\legato, 		8,
 			\microDur, 		~microDur,
 			\microDurMod, 	~globalBus[\microDurMod].asMap,
-			\freqA, 67.midicps,
-			\freqB, 63.midicps,
+			\freqA, 		67.midicps,
+			\freqB, 		65.midicps,
 			\durN, 			~durN,
+			\durNMod,		~globalBus[\durNMod].asMap,
 			\octLow, 		~octLow,
 			\octHigh, 		~octHigh,
 			\octSpeed, 		~octSpeed,
@@ -139,7 +154,7 @@ State(\spce).initActions.add({
 			\octChaos, 		~octChaos,
 			\klankDecay, 	~klankDecay,
 			\combOct, 		~combOct,
-			\envFix, 1,
+			\envFix, 		1,
 			\lowpassMod, 	~globalBus[\lowpassMod].asMap,
 		)
 	);
