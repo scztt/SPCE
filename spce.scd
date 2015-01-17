@@ -87,7 +87,7 @@ SynthDef(\BFormatReverb, {
 		//adjust = (2.3 - (amp * 1000)).lagud(4, 0.001).max(-90);
 		phase = { 1.0.rand + Latch.kr(LFNoise2.kr(1), Dust.kr(5)) };
 		width = 6 + adjust.linexp(0, 2, 1, 150);
-		db = adjust.lincurve(0, 2, 12, -40, 5);
+		db = adjust.lincurve(0, 2, 8, -50, 6);
 		Out.kr(10 + i, db);
 
 		\notes.kr([1, 4/3, 5/3, 7/3]).do({
