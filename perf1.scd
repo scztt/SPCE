@@ -28,11 +28,13 @@ State(\spce).initActions.put({
 	Require("spce");
 
 	~lc.notNil.if({ ~lc.free });
+	~qn.notNil.if({ ~qn.free });
 
 	~resources.addAll([
 		~lc = LCDevice(),
 		~lc.knobs.do(_.ringStyle_(\fill));
 		~bfBus = Bus.audio(s, 4);
+		~qn = QuNeo(),
 	]);
 
 	~reverb = Synth(\BFormatReverb, args: [
@@ -47,6 +49,18 @@ State(\spce).initActions.put({
 		\diffusionFB, 1,
 		\out_bus, 5,
 	]);
+	~qn.pads[14].default().noteOnActions.clear.add({
+		|pad, cv|
+		~synthGroup.set(\t_impReset, 1);
+	});
+	~qn.pads[15].default().noteOnActions.clear.add({
+		|pad, cv|
+		~synthGroup.set(\otrig, cv.value);
+	});
+	~qn.pads[15].default().noteOffActions.clear.add({
+		|pad, cv|
+		~synthGroup.set(\otrig, 0);
+	});
 
 	// Global to all running synths.
 	~global = [
