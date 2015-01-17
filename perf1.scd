@@ -35,18 +35,6 @@ State(\spce).initActions.add({
 		~synthGroup = Group(~reverb, \addBefore),
 	]);
 
-	~reverb = Synth(\BFormatReverb, args: [
-		\in_bus, 10,
-		\mix, 0.65,
-		\predelay, 0.15,
-		\cutoff, 100,
-		\t60low, 15.5,
-		\t60high, 2.5,
-		//	\diffusion, 1.1,
-		\diffusionLR, 1,
-		\diffusionFB, 1,
-		\out_bus, 5,
-	]);
 	~lc.knobs.do(_.ringStyle_(\fill));
 	~qn.pads[14].default().noteOnActions.clear.add({
 		|pad, cv|
