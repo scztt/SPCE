@@ -202,7 +202,8 @@ SynthDef(\ctrBuzz, {
 	);
 	sig = sig + PitchShift.ar(sig, pitchRatio:2, mul: 0.25 * LFPulse.kr(1, 0, 0.5));
 	sig = LeakDC.ar(sig);
-	sig = Mirror.ar(sig, -1, 1);
+	//sig = Mirror.ar(sig, -1, 1);
+	sig = SoftClipAmp8.ar(sig);
 	sig = Compander.ar(sig, sig, 0.7, 1, 1/2);
 	sig = MoogFF.ar(sig, 35 + (env * min(15000, lowpass * 10)), 3.0);
 	sig = sig * EnvGen.kr(Env([0, 1, 1, 0], [0.15, 0.7, 0.15]), timeScale: dur, doneAction:2);
