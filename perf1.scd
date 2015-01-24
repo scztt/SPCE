@@ -166,9 +166,15 @@ State(\spce).initActions.add({
 	));
 
 	Pdef(\cbNotesDrop1, Pbind(
-		\freqA, Scale.minor.degreeToFreq(-1, 98, 2).postln,
-		\freqB, Scale.minor.degreeToFreq(4, 98, 2).postln,
+		\freqA, Scale.major.degreeToFreq(1, 98, 2).postln,
+		\freqB, Scale.major.degreeToFreq(-3, 98, 2).postln,
 	));
+
+	Pdef(\cbNotesDrop1, Pbind(
+		\freqA, Pseq([67, 74].midicps, inf),
+		\freqB, Pseq([64, 60].midicps, inf),
+	));
+
 
 	~grid.front;
 	// ServerView(s).front;
