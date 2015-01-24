@@ -208,7 +208,7 @@ State(\spce).startActions.add({
 
 ServerView(s).front;
 
-
+AudioCaptureView("spce").front;
 
 /*
 
